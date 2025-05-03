@@ -36,6 +36,7 @@ initial_frequency = args.frequency
 # Configuration
 voltage_increment = 20
 frequency_increment = 25
+sleep_time = 90               # Wait 90 seconds before starting the benchmark
 benchmark_time = 600          # 10 minutes benchmark time
 sample_interval = 15          # 15 seconds sample interval
 max_temp = 66                 # Will stop if temperature reaches or exceeds this value
@@ -169,12 +170,12 @@ def restart_system():
         is_interrupt = handling_interrupt
         
         # Restart here as some bitaxes get unstable with bad settings
-        # If not an interrupt, wait 90s for system stabilization as some bitaxes are slow to ramp up
+        # If not an interrupt, wait sleep_time for system stabilization as some bitaxes are slow to ramp up
         if not is_interrupt:
-            print(YELLOW + "Applying new settings and waiting 90s for system stabilization..." + RESET)
+            print(YELLOW + f"Applying new settings and waiting {sleep_time}s for system stabilization..." + RESET)
             response = requests.post(f"{bitaxe_ip}/api/system/restart", timeout=10)
             response.raise_for_status()  # Raise an exception for HTTP errors
-            time.sleep(90)  # Allow 90s time for the system to restart and start hashing
+            time.sleep(sleep_time)  # Allow sleep_time for the system to restart and start hashing
         else:
             print(YELLOW + "Applying final settings..." + RESET)
             response = requests.post(f"{bitaxe_ip}/api/system/restart", timeout=10)
