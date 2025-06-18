@@ -5,8 +5,19 @@ import signal
 import sys
 import argparse
 
+# Enable ansi escape characters in terminal - colors were not working in Windows terminal
 import os
-os.system("")  # enables ansi escape characters in terminal - colors were not working in Windows terminal
+try:
+    import colorama
+    colorama.init()
+except ImportError:
+    # Fallback for environments where colorama isn't available
+    if os.name == "nt":
+        os.system("")  # rudimentary ANSI enable on Windows
+
+# Compute timestamp for file suffix
+import time
+timestamp = time.strftime("%Y%m%d-%H%M%S")
 
 # ANSI Color Codes
 GREEN = "\033[92m"
@@ -78,9 +89,15 @@ if benchmark_time / sample_interval < 7:
 # Add suffix to filename in case of manual initial voltage/frequency
 file_suffix = ""
 if initial_voltage != 1150:
-    file_suffix = file_suffix + " v" + str(initial_voltage)
+    file_suffix = file_suffix + "_v" + str(initial_voltage)
 if initial_frequency != 500:
-    file_suffix = file_suffix + " f" + str(initial_frequency)
+    file_suffix = file_suffix + "_f" + str(initial_frequency)
+
+# Refactor filename (called in multiple places)
+def result_filename():
+    # Extract IP from bitaxe_ip global variable and remove 'http://'
+    ip_address = bitaxe_ip.replace('http://', '')
+    return f"bitaxe_benchmark_results_{ip_address}_{timestamp}{file_suffix}.json"
 
 # Results storage
 results = []
@@ -315,9 +332,8 @@ def benchmark_iteration(core_voltage, frequency):
 
 def save_results():
     try:
-        # Extract IP from bitaxe_ip global variable and remove 'http://'
-        ip_address = bitaxe_ip.replace('http://', '')
-        filename = f"bitaxe_benchmark_results_{ip_address}{file_suffix}.json"
+        # Refactored filename computation
+        filename = result_filename()
         with open(filename, "w") as f:
             json.dump(results, f, indent=4)
         print(GREEN + f"Results saved to {filename}" + RESET)
@@ -399,9 +415,13 @@ try:
             # If we hit thermal limits or other issues, we've found the highest safe settings
             # In case of max Chip Temperature reached, continue loop to next voltage with decreased frequency
             # Condition added to avoid successive overheat tries and reset to high initial frequency
-            if avg_hashrate is None and avg_temp is None and efficiency_jth is None and hashrate_ok is False and avg_vr_temp is None and error_reason == 'CHIP_TEMP_EXCEEDED' and initial_frequency <= current_frequency + frequency_increment and retry_upon_overheat < 1:
+            overheat_retry_allowed = (
+                error_reason == "CHIP_TEMP_EXCEEDED"
+                and retry_upon_overheat < 1
+                and initial_frequency <= current_frequency + frequency_increment
+            )
+            if overheat_retry_allowed:
                 # If overheat, return to initial frequency while increasing voltage (considering max_allowed_voltage)
-                #and current_frequency + frequency_increment <= max_allowed_frequency and current_voltage + voltage_increment <= max_allowed_voltage
                 retry_upon_overheat += 1
                 if current_voltage + voltage_increment <= max_allowed_voltage:
                     current_frequency = initial_frequency
@@ -473,8 +493,8 @@ finally:
         }
         
         # Save the final data to JSON
-        ip_address = bitaxe_ip.replace('http://', '')
-        filename = f"bitaxe_benchmark_results_{ip_address}{file_suffix}.json"
+        # Refactored filename computation
+        filename = result_filename()
         with open(filename, "w") as f:
             json.dump(final_data, f, indent=4)
         
