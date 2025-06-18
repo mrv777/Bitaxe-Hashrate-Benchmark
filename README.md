@@ -4,12 +4,15 @@ A Python-based benchmarking tool for optimizing Bitaxe mining performance by tes
 
 ## Features
 
-- Automated benchmarking of different voltage/frequency combinations
-- Temperature monitoring and safety cutoffs
-- Power efficiency calculations (J/TH)
-- Automatic saving of benchmark results
-- Graceful shutdown with best settings retention
-- Docker support for easy deployment
+- **Single and Parallel Benchmarking**: Test one miner or multiple miners simultaneously
+- **Automated benchmarking** of different voltage/frequency combinations
+- **Temperature monitoring** and safety cutoffs for both chip and VR temperatures
+- **Power efficiency calculations** (J/TH)
+- **Color-coded output** for easy identification of multiple miners
+- **Automatic saving** of benchmark results with separate files per miner
+- **Graceful shutdown** with best settings retention
+- **Thread-safe operation** for parallel processing
+- **Docker support** for easy deployment
 
 ## Prerequisites
 
@@ -51,7 +54,7 @@ docker build -t bitaxe-benchmark .
 
 ## Usage
 
-### Standard Usage
+### Single Miner Benchmarking
 
 Run the benchmark tool by providing your Bitaxe's IP address:
 
@@ -67,6 +70,36 @@ Example:
 ```bash
 python bitaxe_hashrate_benchmark.py 192.168.2.29 -v 1175 -f 775
 ```
+
+### Parallel Multi-Miner Benchmarking
+
+**NEW FEATURE**: Run benchmarks on multiple Bitaxe miners simultaneously:
+
+```bash
+python parallel_bitaxe_benchmark.py <ip1> <ip2> <ip3> [options]
+```
+
+Examples:
+```bash
+# Benchmark 3 miners in parallel
+python parallel_bitaxe_benchmark.py 192.168.1.100 192.168.1.101 192.168.1.102
+
+# With custom starting parameters for all miners
+python parallel_bitaxe_benchmark.py 192.168.1.100 192.168.1.101 192.168.1.102 -v 1100 -f 550
+
+# Works with any number of miners
+python parallel_bitaxe_benchmark.py 192.168.1.100 192.168.1.101
+```
+
+**Parallel Benchmarking Features:**
+- **Color-coded output**: Each miner gets a unique color for easy identification
+- **Independent operation**: If one miner fails, others continue running
+- **Separate results**: Each miner saves to its own JSON file (`bitaxe_benchmark_results_<ip>.json`)
+- **Thread-safe**: All miners run simultaneously without conflicts
+- **Same safety features**: All temperature, voltage, and power protections apply to each miner
+- **Significantly faster**: Complete multiple miners in the same time as one sequential run
+
+📖 **For detailed parallel benchmarking documentation, see [PARALLEL_GUIDE.md](PARALLEL_GUIDE.md)**
 
 ### Docker Usage (Optional)
 
@@ -102,7 +135,16 @@ The script includes several configurable parameters:
 
 ## Output
 
-The benchmark results are saved to `bitaxe_benchmark_results_<ip_address>.json`, containing:
+### Single Miner Results
+The benchmark results are saved to `bitaxe_benchmark_results_<ip_address>.json`
+
+### Parallel Miner Results
+When using parallel benchmarking, each miner saves results to its own file:
+- `bitaxe_benchmark_results_192.168.1.100.json`
+- `bitaxe_benchmark_results_192.168.1.101.json`
+- `bitaxe_benchmark_results_192.168.1.102.json`
+
+Each results file contains:
 - Complete test results for all combinations
 - Top 5 performing configurations ranked by hashrate
 - Top 5 most efficient configurations ranked by J/TH
