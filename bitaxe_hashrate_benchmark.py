@@ -16,7 +16,6 @@ except ImportError:
         os.system("")  # rudimentary ANSI enable on Windows
 
 # Compute timestamp for file suffix
-import time
 timestamp = time.strftime("%Y%m%d-%H%M%S")
 
 # ANSI Color Codes
