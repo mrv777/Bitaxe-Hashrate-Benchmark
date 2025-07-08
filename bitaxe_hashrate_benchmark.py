@@ -20,6 +20,10 @@ def parse_arguments():
     parser.add_argument('-f', '--frequency', type=int, default=500,
                        help='Initial frequency in MHz (default: 500)')
     
+    # Add a new argument for setting values only
+    parser.add_argument('-s', '--set-values', action='store_true', 
+                        help='Set values only, do not benchmark. Apply specified voltage and frequency settings to Bitaxe and exit')
+    
     # If no arguments are provided, print help and exit
     if len(sys.argv) == 1:
         parser.print_help()
@@ -349,6 +353,17 @@ def reset_to_best_setting():
         set_system_settings(best_voltage, best_frequency)
     
     restart_system()
+
+# --- Main execution logic ---
+if args.set_values:
+    print(GREEN + "\n--- Applying Settings Only ---" + RESET)
+    print(GREEN + f"Applying Core Voltage: {initial_voltage}mV, Frequency: {initial_frequency}MHz to Bitaxe." + RESET)
+    
+    # Call the existing set_system_settings function
+    set_system_settings(initial_voltage, initial_frequency)
+    
+    print(GREEN + "Settings applied. Check your Bitaxe web interface to confirm." + RESET)
+    sys.exit(0) # Exit the script after applying settings
 
 # Main benchmarking process
 try:
