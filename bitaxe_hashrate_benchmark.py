@@ -11,24 +11,78 @@ YELLOW = "\033[93m"
 RED = "\033[91m"
 RESET = "\033[0m"
 
-# Add this before the configuration section
+# This formatter allows for multi-line descriptions in help messages and adds default values
+class RawTextAndDefaultsHelpFormatter(argparse.RawTextHelpFormatter):
+    def _get_help_string(self, action):
+        help_text = super()._get_help_string(action)
+        if action.default is not argparse.SUPPRESS:
+            # Append default value to help text if available
+            defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
+            if action.option_strings or action.nargs in defaulting_nargs:
+                if "\n" in help_text:
+                    help_text += f"\n(default: {action.default})"
+                else:
+                    help_text += f" (default: {action.default})"
+        return help_text
+
+# Modify the parse_arguments function
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='Bitaxe Hashrate Benchmark Tool')
-    parser.add_argument('bitaxe_ip', nargs='?', help='IP address of the Bitaxe (e.g., 192.168.2.26)')
-    parser.add_argument('-v', '--voltage', type=int, default=1150,
-                       help='Initial voltage in mV (default: 1150)')
-    parser.add_argument('-f', '--frequency', type=int, default=500,
-                       help='Initial frequency in MHz (default: 500)')
-    
-    # Add a new argument for setting values only
-    parser.add_argument('-s', '--set-values', action='store_true', 
-                        help='Set values only, do not benchmark. Apply specified voltage and frequency settings to Bitaxe and exit')
-    
+    parser = argparse.ArgumentParser(
+        description=
+        f"{GREEN}Bitaxe Hashrate Benchmark Tool v1.0{RESET}\n"
+        "This script allows you to either benchmark your Bitaxe miner across various "
+        "voltage and frequency settings, or apply specific settings directly.\n",
+        epilog=
+        f"{YELLOW}Examples:{RESET}\n"
+        f"  {YELLOW}1. Run a full benchmark (starting at 1150mV, 500MHz):{RESET}\n"
+        f"     {GREEN}python bitaxe_hasrate_benchmark.py 192.168.1.136 -v 1150 -f 500{RESET}\n\n"
+        f"  {YELLOW}2. Apply specific settings (1150mV, 780MHz) and exit:{RESET}\n"
+        f"     {GREEN}python bitaxe_hasrate_benchmark.py 192.168.1.136 --set-values -v 1150 -f 780{RESET}\n\n"
+        f"  {YELLOW}3. Get help (this message):{RESET}\n"
+        f"     {GREEN}python bitaxe_hasrate_benchmark.py --help{RESET}",
+        formatter_class=RawTextAndDefaultsHelpFormatter # <--- USE THE CUSTOM FORMATTER
+    )
+
+    # Positional Argument
+    parser.add_argument(
+        'bitaxe_ip',
+        nargs='?', # Makes it optional if --help is used alone, but required otherwise
+        help=f"{YELLOW}IP address of your Bitaxe miner (e.g., 192.168.2.26){RESET}\n"
+             "  This is required for both benchmarking and setting values."
+    )
+
+    # Optional Arguments
+    parser.add_argument(
+        '-v', '--voltage',
+        type=int,
+        default=1150, # Default value for benchmark start or target setting
+        help=f"{YELLOW}Core voltage in mV.{RESET}\n"
+             "  For benchmark mode: The starting voltage for testing.\n"
+             "  For --set-values mode: The exact voltage to apply."
+    )
+    parser.add_argument(
+        '-f', '--frequency',
+        type=int,
+        default=500, # Default value for benchmark start or target setting
+        help=f"{YELLOW}Core frequency in MHz.{RESET}\n"
+             "  For benchmark mode: The starting frequency for testing.\n"
+             "  For --set-values mode: The exact frequency to apply."
+    )
+
+    # New argument for setting values only
+    parser.add_argument(
+        '-s', '--set-values',
+        action='store_true',
+        help=f"{YELLOW}Set values only; do not run benchmark.{RESET}\n"
+             "  If this flag is present, the script will apply the voltage (-v) and\n"
+             "  frequency (-f) settings to the Bitaxe and then exit."
+    )
+
     # If no arguments are provided, print help and exit
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
-    
+
     return parser.parse_args()
 
 # Replace the configuration section
