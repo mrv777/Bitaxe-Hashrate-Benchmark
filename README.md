@@ -26,13 +26,13 @@ A Python-based benchmarking tool for optimizing Bitaxe mining performance by tes
 ### **Standard Installation**
 
 1. Clone the repository:  
-   ```
+   ```bash
    git clone https://github.com/mrv777/Bitaxe-Hashrate-Benchmark.git  
    cd Bitaxe-Hashrate-Benchmark
    ```
 
 2. Create and activate a virtual environment:  
-   ```
+   ```bash
    python \-m venv venv  
    \# On Windows  
    venv\\Scripts\\activate  
@@ -41,15 +41,15 @@ A Python-based benchmarking tool for optimizing Bitaxe mining performance by tes
    ```
 
 3. Install dependencies:  
-   ```
+   ```bash
    pip install \-r requirements.txt
    ```
 
 ### **Docker Installation**
 
 1. Build the Docker image:  
-   ```
-   docker build \-t bitaxe-benchmark .
+   ```bash
+   docker build \-t bitaxe-benchmark
    ```
 
 ## **Usage**
@@ -57,7 +57,7 @@ A Python-based benchmarking tool for optimizing Bitaxe mining performance by tes
 ### **Standard Usage (Run Full Benchmark)**
 
 Run the benchmark tool by providing your Bitaxe's IP address and initial settings:  
-```
+```bash
 python bitaxe\_hasrate\_benchmark.py \<bitaxe\_ip\> \-v \<initial\_voltage\> \-f \<initial\_frequency\>
 ```
 
@@ -68,14 +68,14 @@ python bitaxe\_hasrate\_benchmark.py \<bitaxe\_ip\> \-v \<initial\_voltage\> \-f
 ```* \-f, \--frequency:``` **Optional.** Initial frequency in MHz for testing (default: 500).
 
 **Example:**  
-```
+```bash
 python bitaxe\_hasrate\_benchmark.py 192.168.1.136 \-v 1150 \-f 500
 ```
 
 ### **Apply Specific Settings (Without Benchmarking)**
 
 To quickly apply specific voltage and frequency settings to your Bitaxe without running the full benchmark:  
-```
+```bash
 python bitaxe\_hasrate\_benchmark.py \<bitaxe\_ip\> \--set-values \-v \<desired\_voltage\_mv\> \-f \<desired\_frequency\_mhz\>
 ```
 
@@ -87,24 +87,24 @@ python bitaxe\_hasrate\_benchmark.py \<bitaxe\_ip\> \--set-values \-v \<desired\
 ```* \-f, \--frequency:``` **Required.** The exact frequency in MHz to apply.
 
 **Example:**  
-```
+```bash
 python bitaxe\_hasrate\_benchmark.py 192.168.1.136 \--set-values \-v 1150 \-f 780
 ```
 
 ### **Docker Usage (Optional)**
 
 Run the container with your Bitaxe's IP address (add \--set-values for that mode):  
-```
+```bash
 docker run \--rm bitaxe-benchmark \<bitaxe\_ip\> \[options\]
 ```
 
 Example (Full Benchmark):  
-```
+```bash
 docker run \--rm bitaxe-benchmark 192.168.2.26 \-v 1200 \-f 550
 ```
 
 Example (Set Settings Only):  
-```
+```bash
 docker run \--rm bitaxe-benchmark 192.168.2.26 \--set-values \-v 1150 \-f 780
 ```
 
