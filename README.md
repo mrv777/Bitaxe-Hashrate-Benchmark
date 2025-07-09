@@ -26,36 +26,46 @@ A Python-based benchmarking tool for optimizing Bitaxe mining performance by tes
 ### **Standard Installation**
 
 1. Clone the repository:  
+   ```
    git clone https://github.com/mrv777/Bitaxe-Hashrate-Benchmark.git  
    cd Bitaxe-Hashrate-Benchmark
+   ```
 
 2. Create and activate a virtual environment:  
+   ```
    python \-m venv venv  
    \# On Windows  
    venv\\Scripts\\activate  
    \# On Linux/Mac  
    source venv/bin/activate
+   ```
 
 3. Install dependencies:  
+   ```
    pip install \-r requirements.txt
+   ```
 
 ### **Docker Installation**
 
 1. Build the Docker image:  
+   ```
    docker build \-t bitaxe-benchmark .
+   ```
 
 ## **Usage**
 
 ### **Standard Usage (Run Full Benchmark)**
 
 Run the benchmark tool by providing your Bitaxe's IP address and initial settings:  
+```
 python bitaxe\_hasrate\_benchmark.py \<bitaxe\_ip\> \-v \<initial\_voltage\> \-f \<initial\_frequency\>
+```
 
 **Arguments:**
 
 * \<bitaxe\_ip\>: **Required.** IP address of your Bitaxe miner (e.g., 192.168.2.26).  
-* \-v, \--voltage: **Optional.** Initial voltage in mV for testing (default: 1150).  
-* \-f, \--frequency: **Optional.** Initial frequency in MHz for testing (default: 500).
+```* \-v, \--voltage:``` **Optional.** Initial voltage in mV for testing (default: 1150).  
+```* \-f, \--frequency:``` **Optional.** Initial frequency in MHz for testing (default: 500).
 
 **Example:**  
 python bitaxe\_hasrate\_benchmark.py 192.168.1.136 \-v 1150 \-f 500
