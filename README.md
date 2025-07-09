@@ -68,33 +68,45 @@ python bitaxe\_hasrate\_benchmark.py \<bitaxe\_ip\> \-v \<initial\_voltage\> \-f
 ```* \-f, \--frequency:``` **Optional.** Initial frequency in MHz for testing (default: 500).
 
 **Example:**  
+```
 python bitaxe\_hasrate\_benchmark.py 192.168.1.136 \-v 1150 \-f 500
+```
 
 ### **Apply Specific Settings (Without Benchmarking)**
 
 To quickly apply specific voltage and frequency settings to your Bitaxe without running the full benchmark:  
+```
 python bitaxe\_hasrate\_benchmark.py \<bitaxe\_ip\> \--set-values \-v \<desired\_voltage\_mv\> \-f \<desired\_frequency\_mhz\>
+```
 
 **Arguments:**
 
 * \<bitaxe\_ip\>: **Required.** IP address of your Bitaxe miner.  
-* \-s, \--set-values: **Flag.** Activates this mode to only set values and exit.  
-* \-v, \--voltage: **Required.** The exact voltage in mV to apply.  
-* \-f, \--frequency: **Required.** The exact frequency in MHz to apply.
+```* \-s, \--set-values:``` **Flag.** Activates this mode to only set values and exit.  
+```* \-v, \--voltage:``` **Required.** The exact voltage in mV to apply.  
+```* \-f, \--frequency:``` **Required.** The exact frequency in MHz to apply.
 
 **Example:**  
+```
 python bitaxe\_hasrate\_benchmark.py 192.168.1.136 \--set-values \-v 1150 \-f 780
+```
 
 ### **Docker Usage (Optional)**
 
 Run the container with your Bitaxe's IP address (add \--set-values for that mode):  
+```
 docker run \--rm bitaxe-benchmark \<bitaxe\_ip\> \[options\]
+```
 
 Example (Full Benchmark):  
+```
 docker run \--rm bitaxe-benchmark 192.168.2.26 \-v 1200 \-f 550
+```
 
 Example (Set Settings Only):  
+```
 docker run \--rm bitaxe-benchmark 192.168.2.26 \--set-values \-v 1150 \-f 780
+```
 
 ## **Configuration**
 
