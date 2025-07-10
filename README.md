@@ -35,7 +35,7 @@ A Python-based benchmarking tool for optimizing Bitaxe mining performance by tes
    ```bash
    python -m venv venv
    # On Windows  
-   venvScriptsactivate
+   venv\Scripts\activate
    # On Linux/Mac  
    source venv/bin/activate
    ```
@@ -48,7 +48,7 @@ A Python-based benchmarking tool for optimizing Bitaxe mining performance by tes
 ### **Docker Installation**
 
 1. Build the Docker image:  
-   `docker build -t bitaxe-benchmark`
+   `docker build -t bitaxe-benchmark .`
 
 ## **Usage**
 
