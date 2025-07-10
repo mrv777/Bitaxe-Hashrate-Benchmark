@@ -91,7 +91,7 @@ def fetch_default_settings():
         default_voltage = system_info.get("coreVoltage", 1150)  # Fallback to 1150 if not found
         default_frequency = system_info.get("frequency", 500)  # Fallback to 500 if not found
         small_core_count = system_info.get("smallCoreCount", 0)
-        asic_count = system_info.get("asicCount", 0)
+        asic_count = system_info.get("asicCount", 1) # Fallback to 1 since this param is removed in latest firmware updates
         print(GREEN + f"Current settings determined:\n"
                       f"  Core Voltage: {default_voltage}mV\n"
                       f"  Frequency: {default_frequency}MHz\n"
