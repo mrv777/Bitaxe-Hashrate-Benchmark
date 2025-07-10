@@ -32,25 +32,21 @@ A Python-based benchmarking tool for optimizing Bitaxe mining performance by tes
    ```
 
 2. Create and activate a virtual environment:  
-   ```bash
-   python \-m venv venv  
-   \# On Windows  
-   venv\\Scripts\\activate  
-   \# On Linux/Mac  
-   source venv/bin/activate
-   ```
+   `python -m venv venv`
+   # On Windows  
+   `venvScriptsactivate`
+   # On Linux/Mac  
+   `source venv/bin/activate`
+   
 
-3. Install dependencies:  
-   ```bash
-   pip install \-r requirements.txt
-   ```
+3. Install dependencies:     
+   `pip install -r requirements.txt`
+
 
 ### **Docker Installation**
 
 1. Build the Docker image:  
-   ```bash
-   docker build \-t bitaxe-benchmark
-   ```
+   `docker build -t bitaxe-benchmark`
 
 ## **Usage**
 
@@ -58,59 +54,59 @@ A Python-based benchmarking tool for optimizing Bitaxe mining performance by tes
 
 Run the benchmark tool by providing your Bitaxe's IP address and initial settings:  
 ```bash
-python bitaxe\_hasrate\_benchmark.py \<bitaxe\_ip\> \-v \<initial\_voltage\> \-f \<initial\_frequency\>
+python bitaxe_hashrate_benchmark.py <bitaxe_ip> -v <initial_voltage> -f <initial_frequency>
 ```
 
 **Arguments:**
 
-* \<bitaxe\_ip\>: **Required.** IP address of your Bitaxe miner (e.g., 192.168.2.26).  
-```* \-v, \--voltage:``` **Optional.** Initial voltage in mV for testing (default: 1150).  
-```* \-f, \--frequency:``` **Optional.** Initial frequency in MHz for testing (default: 500).
+* `<bitaxe_ip>`: **Required.** IP address of your Bitaxe miner (e.g., `192.168.2.26`).  
+* `-v, --voltage:` **Optional.** Initial voltage in mV for testing (default: `1150`).  
+* `-f, --frequency:` **Optional.** Initial frequency in MHz for testing (default: `500`).
 
 **Example:**  
 ```bash
-python bitaxe\_hasrate\_benchmark.py 192.168.1.136 \-v 1150 \-f 500
+python bitaxe_hashrate_benchmark.py 192.168.1.136 -v 1150 -f 550
 ```
 
 ### **Apply Specific Settings (Without Benchmarking)**
 
 To quickly apply specific voltage and frequency settings to your Bitaxe without running the full benchmark:  
 ```bash
-python bitaxe\_hasrate\_benchmark.py \<bitaxe\_ip\> \--set-values \-v \<desired\_voltage\_mv\> \-f \<desired\_frequency\_mhz\>
+python bitaxe_hashrate_benchmark.py <bitaxe_ip> --set-values -v <desired_voltage_mv> -f <desired_frequency_mhz>
 ```
 
 **Arguments:**
 
-* \<bitaxe\_ip\>: **Required.** IP address of your Bitaxe miner.  
-```* \-s, \--set-values:``` **Flag.** Activates this mode to only set values and exit.  
-```* \-v, \--voltage:``` **Required.** The exact voltage in mV to apply.  
-```* \-f, \--frequency:``` **Required.** The exact frequency in MHz to apply.
+* `<bitaxe_ip>`: **Required.** IP address of your Bitaxe miner.  
+* `-s, --set-values`: **Flag.** Activates this mode to only set values and exit.  
+* `-v, --voltage`: **Required.** The exact voltage in mV to apply.  
+* `-f, --frequency`: **Required.** The exact frequency in MHz to apply.
 
 **Example:**  
 ```bash
-python bitaxe\_hasrate\_benchmark.py 192.168.1.136 \--set-values \-v 1150 \-f 780
+python bitaxe_hashrate_benchmark.py 192.168.1.136 --set-values -v 1150 -f 780
 ```
 
 ### **Docker Usage (Optional)**
 
-Run the container with your Bitaxe's IP address (add \--set-values for that mode):  
+Run the container with your Bitaxe's IP address (add --set-values for that mode):  
 ```bash
-docker run \--rm bitaxe-benchmark \<bitaxe\_ip\> \[options\]
+docker run --rm bitaxe-benchmark <bitaxe_ip> [options]
 ```
 
 Example (Full Benchmark):  
 ```bash
-docker run \--rm bitaxe-benchmark 192.168.2.26 \-v 1200 \-f 550
+docker run --rm bitaxe-benchmark 192.168.2.26 -v 1200 -f 550
 ```
 
 Example (Set Settings Only):  
 ```bash
-docker run \--rm bitaxe-benchmark 192.168.2.26 \--set-values \-v 1150 \-f 780
+docker run --rm bitaxe-benchmark 192.168.2.26 --set-values -v 1150 -f 780
 ```
 
 ## **Configuration**
 
-The script includes several configurable parameters. These can be adjusted in the bitaxe\_hasrate\_benchmark.py file:
+The script includes several configurable parameters. These can be adjusted in the bitaxe_hashrate_benchmark.py file:
 
 * Maximum chip temperature: 66°C  
 * Maximum VR temperature: 86°C  
@@ -126,11 +122,11 @@ The script includes several configurable parameters. These can be adjusted in th
 * Minimum required samples: 7 (for valid data processing)  
 * Voltage increment: 15mV  
 * Frequency increment: 20MHz  
-* **ASIC Configuration:** asic\_count is hardcoded to 1 as it's not always provided by the API. small\_core\_count is fetched from the Bitaxe.
+* **ASIC Configuration:** asic_count is hardcoded to 1 as it's not always provided by the API. small_core_count is fetched from the Bitaxe.
 
 ## **Output**
 
-The benchmark results are saved to bitaxe\_benchmark\_results\_\<ip\_address\>.json, containing:
+The benchmark results are saved to bitaxe_benchmark_results_<ip_address>.json, containing:
 
 * Complete test results for all combinations  
 * Top 5 performing configurations ranked by hashrate  
@@ -190,11 +186,11 @@ The tool implements several data processing techniques to ensure accurate result
 
 ## **Contributing**
 
-Contributions are welcome\! Please feel free to submit a Pull Request.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## **License**
 
-This project is licensed under the GNU General Public License v3.0 \- see the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
 
 ## **Disclaimer**
 
