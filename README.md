@@ -32,16 +32,18 @@ A Python-based benchmarking tool for optimizing Bitaxe mining performance by tes
    ```
 
 2. Create and activate a virtual environment:  
-   `python -m venv venv`
+   ```bash
+   python -m venv venv
    # On Windows  
-   `venvScriptsactivate`
+   venvScriptsactivate
    # On Linux/Mac  
-   `source venv/bin/activate`
-   
+   source venv/bin/activate
+   ```
 
 3. Install dependencies:     
-   `pip install -r requirements.txt`
-
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 ### **Docker Installation**
 
