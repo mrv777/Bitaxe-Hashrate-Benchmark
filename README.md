@@ -164,7 +164,7 @@ The tool follows this process:
 
 1. Starts with user-specified or default voltage/frequency  
 2. Tests each combination for 10 minutes  
-3. Validates hashrate is within 8% of theoretical maximum  
+3. Validates hashrate is within 6% of theoretical maximum  
 4. Incrementally adjusts settings:  
    * Increases frequency if stable  
    * Increases voltage if unstable  
