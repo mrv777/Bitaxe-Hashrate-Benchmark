@@ -96,6 +96,7 @@ The script includes several configurable parameters:
 - Maximum input voltage: 5500mV
 - Benchmark duration: 10 minutes
 - Sample interval: 15 seconds
+- Sleep time before benchmark: 90 seconds
 - **Minimum required samples: 7** (for valid data processing)
 - Voltage increment: 20mV
 - Frequency increment: 25MHz
