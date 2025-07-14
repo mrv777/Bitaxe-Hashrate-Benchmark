@@ -5,6 +5,19 @@ import signal
 import sys
 import argparse
 
+# Enable ansi escape characters in terminal - colors were not working in Windows terminal
+import os
+try:
+    import colorama
+    colorama.init()
+except ImportError:
+    # Fallback for environments where colorama isn't available
+    if os.name == "nt":
+        os.system("")  # rudimentary ANSI enable on Windows
+
+# Compute timestamp for file suffix
+timestamp = time.strftime("%Y%m%d-%H%M%S")
+
 # ANSI Color Codes
 GREEN = "\033[92m"
 YELLOW = "\033[93m"
@@ -72,6 +85,19 @@ if initial_frequency < min_allowed_frequency:
 
 if benchmark_time / sample_interval < 7:
     raise ValueError(RED + f"Error: Benchmark time is too short. Please increase the benchmark time or decrease the sample interval. At least 7 samples are required." + RESET)
+
+# Add suffix to filename in case of manual initial voltage/frequency
+file_suffix = ""
+if initial_voltage != 1150:
+    file_suffix = file_suffix + "_v" + str(initial_voltage)
+if initial_frequency != 500:
+    file_suffix = file_suffix + "_f" + str(initial_frequency)
+
+# Refactor filename (called in multiple places)
+def result_filename():
+    # Extract IP from bitaxe_ip global variable and remove 'http://'
+    ip_address = bitaxe_ip.replace('http://', '')
+    return f"bitaxe_benchmark_results_{ip_address}_{timestamp}{file_suffix}.json"
 
 # Results storage
 results = []
@@ -306,9 +332,8 @@ def benchmark_iteration(core_voltage, frequency):
 
 def save_results():
     try:
-        # Extract IP from bitaxe_ip global variable and remove 'http://'
-        ip_address = bitaxe_ip.replace('http://', '')
-        filename = f"bitaxe_benchmark_results_{ip_address}.json"
+        # Refactored filename computation
+        filename = result_filename()
         with open(filename, "w") as f:
             json.dump(results, f, indent=4)
         print(GREEN + f"Results saved to {filename}" + RESET)
@@ -347,12 +372,14 @@ try:
     
     current_voltage = initial_voltage
     current_frequency = initial_frequency
+    retry_upon_overheat = 0
     
     while current_voltage <= max_allowed_voltage and current_frequency <= max_allowed_frequency:
         set_system_settings(current_voltage, current_frequency)
         avg_hashrate, avg_temp, efficiency_jth, hashrate_ok, avg_vr_temp, error_reason = benchmark_iteration(current_voltage, current_frequency)
         
         if avg_hashrate is not None and avg_temp is not None and efficiency_jth is not None:
+            retry_upon_overheat = 0
             result = {
                 "coreVoltage": current_voltage,
                 "frequency": current_frequency,
@@ -371,20 +398,41 @@ try:
                 # If hashrate is good, try increasing frequency
                 if current_frequency + frequency_increment <= max_allowed_frequency:
                     current_frequency += frequency_increment
+                    print(GREEN + "Hashrate is good. Increasing frequency for next try." + RESET)
                 else:
+                    print(GREEN + "Reached max frequency with good results. Stopping further testing." + RESET)
                     break  # We've reached max frequency with good results
             else:
                 # If hashrate is not good, go back one frequency step and increase voltage
                 if current_voltage + voltage_increment <= max_allowed_voltage:
                     current_voltage += voltage_increment
                     current_frequency -= frequency_increment  # Go back to one frequency step and retry
-                    print(YELLOW + f"Hashrate to low compared to expected. Decreasing frequency to {current_frequency}MHz and increasing voltage to {current_voltage}mV" + RESET)
+                    print(YELLOW + f"Hashrate too low compared to expected. Decreasing frequency to {current_frequency}MHz and increasing voltage to {current_voltage}mV" + RESET)
                 else:
+                    print(YELLOW + "Reached max voltage without good results. Stopping further testing." + RESET)
                     break  # We've reached max voltage without good results
         else:
             # If we hit thermal limits or other issues, we've found the highest safe settings
-            print(GREEN + "Reached thermal or stability limits. Stopping further testing." + RESET)
-            break  # Stop testing higher values
+            # In case of max Chip Temperature reached, continue loop to next voltage with decreased frequency
+            # Condition added to avoid successive overheat tries and reset to high initial frequency
+            overheat_retry_allowed = (
+                error_reason == "CHIP_TEMP_EXCEEDED"
+                and retry_upon_overheat < 1
+                and initial_frequency <= current_frequency + frequency_increment
+            )
+            if overheat_retry_allowed:
+                # If overheat, return to initial frequency while increasing voltage (considering max_allowed_voltage)
+                retry_upon_overheat += 1
+                if current_voltage + voltage_increment <= max_allowed_voltage:
+                    current_frequency = initial_frequency
+                    current_voltage += voltage_increment
+                    print(GREEN + "Reached thermal limit for the current voltage/frequency. Switching to next voltage increment." + RESET)
+                else:
+                    print(GREEN + "Reached thermal limit for the current voltage/frequency. Next voltage increment out of voltage limit. Stopping further testing." + RESET)
+                    break  # We've reached max voltage, can't increase voltage anymore
+            else:
+                print(GREEN + "Reached thermal or stability limits. Stopping further testing." + RESET)
+                break  # Stop testing higher values
 
         save_results()
 
@@ -445,8 +493,8 @@ finally:
         }
         
         # Save the final data to JSON
-        ip_address = bitaxe_ip.replace('http://', '')
-        filename = f"bitaxe_benchmark_results_{ip_address}.json"
+        # Refactored filename computation
+        filename = result_filename()
         with open(filename, "w") as f:
             json.dump(final_data, f, indent=4)
         
@@ -496,3 +544,4 @@ def cleanup_and_exit(reason=None):
             print(RED + f"Benchmarking stopped: {reason}" + RESET)
         print(GREEN + "Benchmarking completed." + RESET)
         sys.exit(0)
+
