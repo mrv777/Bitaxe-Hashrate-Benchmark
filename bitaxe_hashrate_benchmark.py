@@ -91,24 +91,65 @@ handling_interrupt = False
 
 def fetch_default_settings():
     global default_voltage, default_frequency, small_core_count, asic_count
+    
+    # Try /api/system/info first - always get small_core_count from here
     try:
         response = requests.get(f"{bitaxe_ip}/api/system/info", timeout=10)
         response.raise_for_status()
         system_info = response.json()
-        default_voltage = system_info.get("coreVoltage", 1150)  # Fallback to 1150 if not found
-        default_frequency = system_info.get("frequency", 500)  # Fallback to 500 if not found
-        small_core_count = system_info.get("smallCoreCount", 0)
-        asic_count = system_info.get("asicCount", 0)
-        print(GREEN + f"Current settings determined:\n"
+        
+        # Always get small_core_count from /system/info since it's always available there
+        if "smallCoreCount" not in system_info:
+            print(RED + "Error: smallCoreCount field missing from /api/system/info response." + RESET)
+            print(RED + "Cannot proceed without core count information for hashrate calculations." + RESET)
+            sys.exit(1)
+        
+        small_core_count = system_info.get("smallCoreCount")
+        
+        # Check if we have all the info we need from /system/info
+        has_voltage = "coreVoltage" in system_info
+        has_frequency = "frequency" in system_info
+        has_asic_count = "asicCount" in system_info
+        
+        if has_voltage and has_frequency and has_asic_count:
+            # We have all the info we need from /info
+            default_voltage = system_info.get("coreVoltage", 1150)
+            default_frequency = system_info.get("frequency", 500)
+            asic_count = system_info.get("asicCount", 0)
+            print(GREEN + f"Current settings determined from /api/system/info:\n"
+                          f"  Core Voltage: {default_voltage}mV\n"
+                          f"  Frequency: {default_frequency}MHz\n"
+                          f"  ASIC Configuration: {small_core_count * asic_count} total cores" + RESET)
+            return
+        else:
+            print(YELLOW + f"Got small_core_count ({small_core_count}) from /api/system/info, getting remaining info from /api/system/asic..." + RESET)
+    except requests.exceptions.RequestException as e:
+        print(RED + f"Error fetching from /api/system/info: {e}" + RESET)
+        sys.exit(1)
+    
+    # Try /api/system/asic for updated devices
+    try:
+        response = requests.get(f"{bitaxe_ip}/api/system/asic", timeout=10)
+        response.raise_for_status()
+        asic_info = response.json()
+        
+        default_voltage = asic_info.get("defaultVoltage", 1150)
+        default_frequency = asic_info.get("defaultFrequency", 500)
+        # Keep the small_core_count we got from /system/info (don't override it)
+        asic_count = asic_info.get("asicCount", 1)
+        
+        print(GREEN + f"Current settings determined from /api/system/asic:\n"
                       f"  Core Voltage: {default_voltage}mV\n"
                       f"  Frequency: {default_frequency}MHz\n"
                       f"  ASIC Configuration: {small_core_count * asic_count} total cores" + RESET)
+        return
     except requests.exceptions.RequestException as e:
-        print(RED + f"Error fetching default system settings: {e}. Using fallback defaults." + RESET)
-        default_voltage = 1150
-        default_frequency = 500
-        small_core_count = 0
-        asic_count = 0
+        print(RED + f"Error fetching from /api/asic: {e}" + RESET)
+    
+    # If both endpoints fail, exit the program
+    print(RED + "Failed to fetch rest of the device information from /api/system/asic." + RESET)
+    print(RED + "Cannot proceed safely without device configuration. Please check your connection and try again." + RESET)
+    sys.exit(1)
 
 # Add a global flag to track whether the system has already been reset
 system_reset_done = False
