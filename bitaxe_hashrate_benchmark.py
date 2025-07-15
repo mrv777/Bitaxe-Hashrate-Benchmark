@@ -4,6 +4,12 @@ import json
 import signal
 import sys
 import argparse
+from datetime import datetime
+START_TIME = datetime.now().strftime("%Y-%m-%d_%H")
+
+
+if 'START_TIME' not in globals():
+    START_TIME = datetime.now().strftime("%Y-%m-%d_%H")
 
 # ANSI Color Codes
 GREEN = "\033[92m"
@@ -308,7 +314,7 @@ def save_results():
     try:
         # Extract IP from bitaxe_ip global variable and remove 'http://'
         ip_address = bitaxe_ip.replace('http://', '')
-        filename = f"bitaxe_benchmark_results_{ip_address}.json"
+        filename = f"bitaxe_benchmark_results_{ip_address}_{START_TIME}.json"
         with open(filename, "w") as f:
             json.dump(results, f, indent=4)
         print(GREEN + f"Results saved to {filename}" + RESET)
@@ -446,7 +452,7 @@ finally:
         
         # Save the final data to JSON
         ip_address = bitaxe_ip.replace('http://', '')
-        filename = f"bitaxe_benchmark_results_{ip_address}.json"
+        filename = f"bitaxe_benchmark_results_{ip_address}_{START_TIME}.json"
         with open(filename, "w") as f:
             json.dump(final_data, f, indent=4)
         
