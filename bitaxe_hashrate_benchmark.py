@@ -4,7 +4,6 @@ import json
 import signal
 import sys
 import argparse
-import threading
 from concurrent.futures import ThreadPoolExecutor
 
 # ANSI Color Codes
