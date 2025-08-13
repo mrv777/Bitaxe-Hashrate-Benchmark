@@ -4,6 +4,7 @@ import json
 import signal
 import sys
 import argparse
+import statistics
 from datetime import datetime
 START_TIME = datetime.now().strftime("%Y-%m-%d_%H")
 
@@ -88,6 +89,12 @@ default_frequency = None
 
 # Check if we're handling an interrupt (Ctrl+C)
 handling_interrupt = False
+
+def running_stddev(N, s1, s2):
+    if N > 1:
+        return ((N * s2 - s1 ** 2) / (N * (N - 1))) ** 0.5
+    else:
+        return 0.0
 
 def fetch_default_settings():
     global default_voltage, default_frequency, small_core_count, asic_count
@@ -234,6 +241,8 @@ def benchmark_iteration(core_voltage, frequency):
     current_time = time.strftime("%H:%M:%S")
     print(GREEN + f"[{current_time}] Starting benchmark for Core Voltage: {core_voltage}mV, Frequency: {frequency}MHz" + RESET)
     hash_rates = []
+    s1 = 0.0
+    s2 = 0.0
     temperatures = []
     power_consumptions = []
     vr_temps = []
@@ -244,48 +253,50 @@ def benchmark_iteration(core_voltage, frequency):
         info = get_system_info()
         if info is None:
             print(YELLOW + "Skipping this iteration due to failure in fetching system info." + RESET)
-            return None, None, None, False, None, "SYSTEM_INFO_FAILURE"
+            return None, None, None, None, False, None, "SYSTEM_INFO_FAILURE"
         
         temp = info.get("temp")
         vr_temp = info.get("vrTemp")  # Get VR temperature if available
         voltage = info.get("voltage")
         if temp is None:
             print(YELLOW + "Temperature data not available." + RESET)
-            return None, None, None, False, None, "TEMPERATURE_DATA_FAILURE"
+            return None, None, None, None, False, None, "TEMPERATURE_DATA_FAILURE"
         
         if temp < 5:
             print(YELLOW + "Temperature is below 5°C. This is unexpected. Please check the system." + RESET)
-            return None, None, None, False, None, "TEMPERATURE_BELOW_5"
+            return None, None, None, None, False, None, "TEMPERATURE_BELOW_5"
         
         # Check both chip and VR temperatures
         if temp >= max_temp:
             print(RED + f"Chip temperature exceeded {max_temp}°C! Stopping current benchmark." + RESET)
-            return None, None, None, False, None, "CHIP_TEMP_EXCEEDED"
+            return None, None, None, None, False, None, "CHIP_TEMP_EXCEEDED"
             
         if vr_temp is not None and vr_temp >= max_vr_temp:
             print(RED + f"Voltage regulator temperature exceeded {max_vr_temp}°C! Stopping current benchmark." + RESET)
-            return None, None, None, False, None, "VR_TEMP_EXCEEDED"
+            return None, None, None, None, False, None, "VR_TEMP_EXCEEDED"
 
         if voltage < min_input_voltage:
             print(RED + f"Input voltage is below the minimum allowed value of {min_input_voltage}mV! Stopping current benchmark." + RESET)
-            return None, None, None, False, None, "INPUT_VOLTAGE_BELOW_MIN"
+            return None, None, None, None, False, None, "INPUT_VOLTAGE_BELOW_MIN"
         
         if voltage > max_input_voltage:
             print(RED + f"Input voltage is above the maximum allowed value of {max_input_voltage}mV! Stopping current benchmark." + RESET)
-            return None, None, None, False, None, "INPUT_VOLTAGE_ABOVE_MAX"
+            return None, None, None, None, False, None, "INPUT_VOLTAGE_ABOVE_MAX"
         
         hash_rate = info.get("hashRate")
         power_consumption = info.get("power")
         
         if hash_rate is None or power_consumption is None:
             print(YELLOW + "Hashrate or Watts data not available." + RESET)
-            return None, None, None, False, None, "HASHRATE_POWER_DATA_FAILURE"
+            return None, None, None, None, False, None, "HASHRATE_POWER_DATA_FAILURE"
         
         if power_consumption > max_power:
             print(RED + f"Power consumption exceeded {max_power}W! Stopping current benchmark." + RESET)
-            return None, None, None, False, None, "POWER_CONSUMPTION_EXCEEDED"
+            return None, None, None, None, False, None, "POWER_CONSUMPTION_EXCEEDED"
         
         hash_rates.append(hash_rate)
+        s1 += hash_rate
+        s2 += hash_rate * hash_rate
         temperatures.append(temp)
         power_consumptions.append(power_consumption)
         if vr_temp is not None and vr_temp > 0:
@@ -293,12 +304,14 @@ def benchmark_iteration(core_voltage, frequency):
 
         # Calculate percentage progress
         percentage_progress = ((sample + 1) / total_samples) * 100
+        running_sd = running_stddev(sample + 1, s1, s2)
         status_line = (
             f"[{sample + 1:2d}/{total_samples:2d}] "
             f"{percentage_progress:5.1f}% | "
             f"CV: {core_voltage:4d}mV | "
             f"F: {frequency:4d}MHz | "
             f"H: {int(hash_rate):4d} GH/s | "
+            f"SD: {running_sd:.2f} GH/s | "
             f"IV: {int(voltage):4d}mV | "
             f"T: {int(temp):2d}°C"
         )
@@ -315,6 +328,7 @@ def benchmark_iteration(core_voltage, frequency):
         sorted_hashrates = sorted(hash_rates)
         trimmed_hashrates = sorted_hashrates[3:-3]  # Remove first 3 and last 3 elements
         average_hashrate = sum(trimmed_hashrates) / len(trimmed_hashrates)
+        hashrate_stdev = statistics.stdev(trimmed_hashrates) if len(trimmed_hashrates) > 1 else 0.0
         
         # Sort and trim temperatures (remove lowest 6 readings during warmup)
         sorted_temps = sorted(temperatures)
@@ -335,21 +349,22 @@ def benchmark_iteration(core_voltage, frequency):
             efficiency_jth = average_power / (average_hashrate / 1_000)
         else:
             print(RED + "Warning: Zero hashrate detected, skipping efficiency calculation" + RESET)
-            return None, None, None, False, None, "ZERO_HASHRATE"
+            return None, None, None, None, False, None, "ZERO_HASHRATE"
         
         # Calculate if hashrate is within 6% of expected
         hashrate_within_tolerance = (average_hashrate >= expected_hashrate * 0.94)
         
         print(GREEN + f"Average Hashrate: {average_hashrate:.2f} GH/s (Expected: {expected_hashrate:.2f} GH/s)" + RESET)
+        print(GREEN + f"Hashrate Std Dev: {hashrate_stdev:.2f} GH/s" + RESET)
         print(GREEN + f"Average Temperature: {average_temperature:.2f}°C" + RESET)
         if average_vr_temp is not None:
             print(GREEN + f"Average VR Temperature: {average_vr_temp:.2f}°C" + RESET)
         print(GREEN + f"Efficiency: {efficiency_jth:.2f} J/TH" + RESET)
         
-        return average_hashrate, average_temperature, efficiency_jth, hashrate_within_tolerance, average_vr_temp, None
+        return average_hashrate, hashrate_stdev, average_temperature, efficiency_jth, hashrate_within_tolerance, average_vr_temp, None
     else:
         print(YELLOW + "No Hashrate or Temperature or Watts data collected." + RESET)
-        return None, None, None, False, None, "NO_DATA_COLLECTED"
+        return None, None, None, None, False, None, "NO_DATA_COLLECTED"
 
 def save_results():
     try:
@@ -397,13 +412,14 @@ try:
     
     while current_voltage <= max_allowed_voltage and current_frequency <= max_allowed_frequency:
         set_system_settings(current_voltage, current_frequency)
-        avg_hashrate, avg_temp, efficiency_jth, hashrate_ok, avg_vr_temp, error_reason = benchmark_iteration(current_voltage, current_frequency)
+        avg_hashrate, hashrate_stdev, avg_temp, efficiency_jth, hashrate_ok, avg_vr_temp, error_reason = benchmark_iteration(current_voltage, current_frequency)
         
         if avg_hashrate is not None and avg_temp is not None and efficiency_jth is not None:
             result = {
                 "coreVoltage": current_voltage,
                 "frequency": current_frequency,
                 "averageHashRate": avg_hashrate,
+                "hashrateStdDev": hashrate_stdev,
                 "averageTemperature": avg_temp,
                 "efficiencyJTH": efficiency_jth
             }
@@ -471,6 +487,7 @@ finally:
                     "coreVoltage": result["coreVoltage"],
                     "frequency": result["frequency"],
                     "averageHashRate": result["averageHashRate"],
+                    "hashrateStdDev": result["hashrateStdDev"],
                     "averageTemperature": result["averageTemperature"],
                     "efficiencyJTH": result["efficiencyJTH"],
                     **({"averageVRTemp": result["averageVRTemp"]} if "averageVRTemp" in result else {})
@@ -483,6 +500,7 @@ finally:
                     "coreVoltage": result["coreVoltage"],
                     "frequency": result["frequency"],
                     "averageHashRate": result["averageHashRate"],
+                    "hashrateStdDev": result["hashrateStdDev"],
                     "averageTemperature": result["averageTemperature"],
                     "efficiencyJTH": result["efficiencyJTH"],
                     **({"averageVRTemp": result["averageVRTemp"]} if "averageVRTemp" in result else {})
@@ -505,6 +523,7 @@ finally:
                 print(GREEN + f"  Core Voltage: {result['coreVoltage']}mV" + RESET)
                 print(GREEN + f"  Frequency: {result['frequency']}MHz" + RESET)
                 print(GREEN + f"  Average Hashrate: {result['averageHashRate']:.2f} GH/s" + RESET)
+                print(GREEN + f"  Hashrate Std Dev: {result.get('hashrateStdDev', 0.0):.2f} GH/s" + RESET)
                 print(GREEN + f"  Average Temperature: {result['averageTemperature']:.2f}°C" + RESET)
                 print(GREEN + f"  Efficiency: {result['efficiencyJTH']:.2f} J/TH" + RESET)
                 if "averageVRTemp" in result:
@@ -516,6 +535,7 @@ finally:
                 print(GREEN + f"  Core Voltage: {result['coreVoltage']}mV" + RESET)
                 print(GREEN + f"  Frequency: {result['frequency']}MHz" + RESET)
                 print(GREEN + f"  Average Hashrate: {result['averageHashRate']:.2f} GH/s" + RESET)
+                print(GREEN + f"  Hashrate Std Dev: {result.get('hashrateStdDev', 0.0):.2f} GH/s" + RESET)
                 print(GREEN + f"  Average Temperature: {result['averageTemperature']:.2f}°C" + RESET)
                 print(GREEN + f"  Efficiency: {result['efficiencyJTH']:.2f} J/TH" + RESET)
                 if "averageVRTemp" in result:
