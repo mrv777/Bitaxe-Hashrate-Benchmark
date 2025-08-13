@@ -311,7 +311,7 @@ def benchmark_iteration(core_voltage, frequency):
             f"CV: {core_voltage:4d}mV | "
             f"F: {frequency:4d}MHz | "
             f"H: {int(hash_rate):4d} GH/s | "
-            f"SD: {running_sd:.2f} GH/s | "
+            f"SD: {running_sd:3.0f} GH/s | "
             f"IV: {int(voltage):4d}mV | "
             f"T: {int(temp):2d}°C"
         )
